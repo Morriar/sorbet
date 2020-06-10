@@ -1,0 +1,9 @@
+s(:send, nil, :m,
+  s(:block,
+    s(:send, nil, :lambda),
+    s(:args,
+      s(:optarg, :a,
+        s(:numblock,
+          s(:send, nil, :lambda), 1,
+          s(:lvar, :_1)))),
+    s(:lvar, :a)))
