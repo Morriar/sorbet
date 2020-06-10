@@ -299,6 +299,7 @@ using namespace std::string_literals;
   xstring_contents
 
 %type <token>
+  args_forward
   blkarg_mark
   call_op
   cname
@@ -1236,7 +1237,16 @@ int yylex(parser::semantic_type *lval, ruby_parser::typedruby25 &driver) {
                     {
                       $$ = driver.alloc.delimited_node_list($1, $2, $3);
                     }
-
+                | tLPAREN2 args_forward rparen
+                    {
+                      // TODO
+                      if (!driver.lex.is_declared_forward_args()) {
+                        /* diagnostic :error, :unexpected_token, { :token => 'tBDOT3' } , val[1] */
+                      }
+                      auto forwarded_args = driver.build.forwarded_args(self, $2);
+                      auto node_list = driver.alloc.node_list(forwarded_args);
+                      $$ = driver.alloc.delimited_node_list($1, node_list, $3);
+                    }
   opt_paren_args: // nothing
                     {
                       $$ = driver.alloc.delimited_node_list(nullptr, driver.alloc.node_list(), nullptr);
@@ -2667,6 +2677,13 @@ keyword_variable: kNIL
                       driver.lex.set_state_expr_value();
                       $$ = driver.build.args(self, $1, $2, $3, true);
                     }
+                | tLPAREN2 args_forward rparen
+                    {
+                      // TODO
+                      driver.lex.set_state_expr_value();
+                      driver.lex.declare_forward_args();
+                      $$ = driver.build.forward_args(self, $1, $2, $3);
+                    }
                 |   {
                       $<boolean>$ = driver.lex.in_kwarg;
                       driver.lex.in_kwarg = true;
@@ -2820,7 +2837,10 @@ keyword_variable: kNIL
                     {
                       $$ = driver.alloc.node_list();
                     }
-
+    args_forward: tDOT3
+                    {
+                      $$ = $1;
+                    }
        f_bad_arg: tCONSTANT
                     {
                       driver.diagnostics.emplace_back(dlevel::ERROR, dclass::ArgumentConst, $1);

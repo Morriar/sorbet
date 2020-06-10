@@ -39,7 +39,7 @@ NodeDef nodes[] = {
         "and",
         vector<FieldDef>({{"left", FieldType::Node}, {"right", FieldType::Node}}),
     },
-    // &&=
+    // &&parser/tools/generate_ast.cc=
     {
         "AndAsgn",
         "and_asgn",
@@ -239,6 +239,18 @@ NodeDef nodes[] = {
         "For",
         "for",
         vector<FieldDef>({{"vars", FieldType::Node}, {"expr", FieldType::Node}, {"body", FieldType::Node}}),
+    },
+    // "..." forward parameters (definition site)
+    {
+        "ForwardArgs",
+        "forward_args",
+        vector<FieldDef>(),
+    },
+    // "..." forwarded parameters (call site)
+    {
+        "ForwardedArgs",
+        "forwarded_args",
+        vector<FieldDef>(),
     },
     // float literal like "1.2"
     {
