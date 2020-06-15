@@ -2662,7 +2662,12 @@ void lexer::set_state_expr_value() {
   leading_dot := |*
       # Insane leading dots:
       # a #comment
+      #  # post-2.7 comment
       #  .b: a.b
+
+      (c_space* w_space_comment '\n')+
+      => { /* nothing to do after 2.7 */ };
+
       c_space* %{ tm = p; } ('.' | '&.')
       => { p = tm - 1; fgoto expr_end; };
 
