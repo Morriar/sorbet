@@ -147,7 +147,11 @@ public:
         if (auto *id = parser::cast_node<Ident>(node.get())) {
             auto name = id->name.data(gs_);
             ENFORCE(name->kind == core::NameKind::UTF8);
-            if (driver_->lex.is_declared(name->show(gs_))) {
+            auto name_str = name->show(gs_);
+            if (driver_->lex.is_declared(name_str)) {
+                if (name_str == driver_->current_arg_stack.top()) {
+                    error(ruby_parser::dclass::CircularArgumentReference, node->loc, name_str);
+                }
                 return make_unique<LVar>(node->loc, id->name);
             } else {
                 return make_unique<Send>(node->loc, nullptr, id->name, sorbet::parser::NodeVec());
