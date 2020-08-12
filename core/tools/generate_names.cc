@@ -68,6 +68,7 @@ NameDef names[] = {
     {"selfRestore", "<selfRestore>"}, // used to restore self in case block changes it
     {"hashTemp", "<hashTemp>"},
     {"arrayTemp", "<arrayTemp>"},
+    {"rangeTemp", "<rangeTemp>"},
     {"rescueTemp", "<rescueTemp>"},
     {"exceptionValue", "<exceptionValue>"},
     {"gotoDeadTemp", "<gotoDeadTemp>"},
@@ -308,6 +309,7 @@ NameDef names[] = {
     {"buildHash", "<build-hash>"},
     {"buildKeywordArgs", "<build-keyword-args>"},
     {"buildArray", "<build-array>"},
+    {"buildRange", "<build-range>"},
     {"splat", "<splat>"},
     {"expandSplat", "<expand-splat>"},
     {"suggestType", "<suggest-type>"},

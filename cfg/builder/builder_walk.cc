@@ -683,6 +683,29 @@ BasicBlock *CFGBuilder::walk(CFGContext cctx, ast::Expression *what, BasicBlock 
                 ret = current;
             },
 
+            [&](ast::Range *r) {
+                InlinedVector<core::LocalVariable, 2> vars;
+                InlinedVector<core::LocOffsets, 2> locs;
+
+                core::LocalVariable tmpFrom = cctx.newTemporary(core::Names::rangeTemp());
+                current = walk(cctx.withTarget(tmpFrom), r->from.get(), current);
+                vars.emplace_back(tmpFrom);
+                locs.emplace_back(r->loc);
+
+                core::LocalVariable tmpTo = cctx.newTemporary(core::Names::rangeTemp());
+                current = walk(cctx.withTarget(tmpTo), r->to.get(), current);
+                vars.emplace_back(tmpTo);
+                locs.emplace_back(r->loc);
+
+                core::LocalVariable magic = cctx.newTemporary(core::Names::magic());
+                synthesizeExpr(current, magic, core::LocOffsets::none(), make_unique<Alias>(core::Symbols::Magic()));
+                auto isPrivateOk = false;
+                current->exprs.emplace_back(
+                    cctx.target, r->loc,
+                    make_unique<Send>(magic, core::Names::buildRange(), r->loc, vars, locs, isPrivateOk));
+                ret = current;
+            },
+
             [&](ast::Cast *c) {
                 core::LocalVariable tmp = cctx.newTemporary(core::Names::castTemp());
                 current = walk(cctx.withTarget(tmp), c->arg.get(), current);
