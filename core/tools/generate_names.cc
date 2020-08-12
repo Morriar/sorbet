@@ -308,6 +308,7 @@ NameDef names[] = {
     {"buildHash", "<build-hash>"},
     {"buildKeywordArgs", "<build-keyword-args>"},
     {"buildArray", "<build-array>"},
+    {"buildRange", "<build-range>"},
     {"splat", "<splat>"},
     {"expandSplat", "<expand-splat>"},
     {"suggestType", "<suggest-type>"},
