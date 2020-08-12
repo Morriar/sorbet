@@ -1278,20 +1278,16 @@ TreePtr node2TreeImpl(DesugarContext dctx, unique_ptr<parser::Node> what) {
                 result = std::move(res);
             },
             [&](parser::IRange *ret) {
-                TreePtr range = MK::Constant(loc, core::Symbols::Range());
                 auto from = node2TreeImpl(dctx, std::move(ret->from));
                 auto to = node2TreeImpl(dctx, std::move(ret->to));
-                auto send = MK::Send2(loc, std::move(range), core::Names::new_(), std::move(from), std::move(to));
-                result = std::move(send);
+                auto range = MK::Range(loc, std::move(from), std::move(to), false);
+                result = std::move(range);
             },
             [&](parser::ERange *ret) {
-                TreePtr range = MK::Constant(loc, core::Symbols::Range());
                 auto from = node2TreeImpl(dctx, std::move(ret->from));
                 auto to = node2TreeImpl(dctx, std::move(ret->to));
-                auto true_ = MK::True(loc);
-                auto send = MK::Send3(loc, std::move(range), core::Names::new_(), std::move(from), std::move(to),
-                                      std::move(true_));
-                result = std::move(send);
+                auto range = MK::Range(loc, std::move(from), std::move(to), true);
+                result = std::move(range);
             },
             [&](parser::Regexp *regexpNode) {
                 TreePtr cnst = MK::Constant(loc, core::Symbols::Regexp());

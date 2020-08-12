@@ -52,6 +52,7 @@ enum class Tag {
     Cast,
     Hash,
     Array,
+    Range,
     Literal,
     UnresolvedConstantLit,
     ConstantLit,
@@ -782,6 +783,25 @@ private:
     virtual void _sanityCheck();
 };
 CheckSize(Array, 56, 8);
+
+TREE(Range) : public Expression {
+public:
+    TreePtr from;
+    TreePtr to;
+    bool exclusive;
+
+    Range(core::LocOffsets loc, TreePtr from, TreePtr to, bool exclusive);
+
+    TreePtr deepCopy() const;
+
+    virtual std::string toStringWithTabs(const core::GlobalState &gs, int tabs = 0) const;
+    virtual std::string showRaw(const core::GlobalState &gs, int tabs = 0);
+    virtual std::string nodeName();
+
+private:
+    virtual void _sanityCheck();
+};
+CheckSize(Range, 56, 8);
 
 TREE(Literal) : public Expression {
 public:

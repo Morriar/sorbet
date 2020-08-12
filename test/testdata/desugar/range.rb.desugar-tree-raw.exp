@@ -20,17 +20,10 @@ ClassDef{
               kind = Local
               name = <U a>
             }
-            rhs = Send{
-              recv = ConstantLit{
-                orig = nullptr
-                symbol = ::Range
-              }
-              fun = <U new>
-              block = nullptr
-              args = [
-                Literal{ value = 1 }
-                Literal{ value = 2 }
-              ]
+            rhs = Range{
+              from = Literal{ value = 1 }
+              to = Literal{ value = 2 }
+              exclusive = false
             }
           }
           Assign{
@@ -56,18 +49,10 @@ ClassDef{
               kind = Local
               name = <U c>
             }
-            rhs = Send{
-              recv = ConstantLit{
-                orig = nullptr
-                symbol = ::Range
-              }
-              fun = <U new>
-              block = nullptr
-              args = [
-                Literal{ value = 1 }
-                Literal{ value = 2 }
-                Literal{ value = true }
-              ]
+            rhs = Range{
+              from = Literal{ value = 1 }
+              to = Literal{ value = 2 }
+              exclusive = true
             }
           }
           Assign{
@@ -95,17 +80,10 @@ ClassDef{
               name = <U e>
             }
             rhs = Send{
-              recv = Send{
-                recv = ConstantLit{
-                  orig = nullptr
-                  symbol = ::Range
-                }
-                fun = <U new>
-                block = nullptr
-                args = [
-                  Literal{ value = 1 }
-                  Literal{ value = 42 }
-                ]
+              recv = Range{
+                from = Literal{ value = 1 }
+                to = Literal{ value = 42 }
+                exclusive = false
               }
               fun = <U first>
               block = nullptr
@@ -119,17 +97,10 @@ ClassDef{
               name = <U f>
             }
             rhs = Send{
-              recv = Send{
-                recv = ConstantLit{
-                  orig = nullptr
-                  symbol = ::Range
-                }
-                fun = <U new>
-                block = nullptr
-                args = [
-                  Literal{ value = "a" }
-                  Literal{ value = "z" }
-                ]
+              recv = Range{
+                from = Literal{ value = "a" }
+                to = Literal{ value = "z" }
+                exclusive = false
               }
               fun = <U last>
               block = nullptr
@@ -226,17 +197,10 @@ ClassDef{
               kind = Local
               name = <U g>
             }
-            rhs = Send{
-              recv = ConstantLit{
-                orig = nullptr
-                symbol = ::Range
-              }
-              fun = <U new>
-              block = nullptr
-              args = [
-                Literal{ value = 1 }
-                EmptyTree
-              ]
+            rhs = Range{
+              from = Literal{ value = 1 }
+              to = EmptyTree
+              exclusive = false
             }
           }
           Assign{

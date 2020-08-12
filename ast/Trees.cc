@@ -30,6 +30,7 @@ template class std::unique_ptr<sorbet::ast::Send>;
 template class std::unique_ptr<sorbet::ast::Cast>;
 template class std::unique_ptr<sorbet::ast::Hash>;
 template class std::unique_ptr<sorbet::ast::Array>;
+template class std::unique_ptr<sorbet::ast::Range>;
 template class std::unique_ptr<sorbet::ast::Literal>;
 template class std::unique_ptr<sorbet::ast::UnresolvedConstantLit>;
 template class std::unique_ptr<sorbet::ast::ZSuperArgs>;
@@ -136,6 +137,10 @@ void TreePtr::deleteTagged(Tag tag, void *ptr) noexcept {
 
         case Tag::Array:
             delete reinterpret_cast<Array *>(ptr);
+            break;
+
+        case Tag::Range:
+            delete reinterpret_cast<Range *>(ptr);
             break;
 
         case Tag::Literal:
@@ -397,6 +402,12 @@ Hash::Hash(core::LocOffsets loc, ENTRY_store keys, ENTRY_store values)
 Array::Array(core::LocOffsets loc, ENTRY_store elems) : Expression(loc), elems(std::move(elems)) {
     categoryCounterInc("trees", "array");
     histogramInc("trees.array.elems", this->elems.size());
+    _sanityCheck();
+}
+
+Range::Range(core::LocOffsets loc, TreePtr from, TreePtr to, bool exclusive)
+    : Expression(loc), from(std::move(from)), to(std::move(to)), exclusive(exclusive) {
+    categoryCounterInc("trees", "range");
     _sanityCheck();
 }
 
@@ -1066,6 +1077,21 @@ string Array::showRaw(const core::GlobalState &gs, int tabs) {
     return fmt::to_string(buf);
 }
 
+string Range::showRaw(const core::GlobalState &gs, int tabs) {
+    fmt::memory_buffer buf;
+    fmt::format_to(buf, "{}{{\n", nodeName());
+    printTabs(buf, tabs + 1);
+    fmt::format_to(buf, "from = {}\n", from->showRaw(gs, tabs + 2));
+    printTabs(buf, tabs + 1);
+    fmt::format_to(buf, "to = {}\n", to->showRaw(gs, tabs + 2));
+    printTabs(buf, tabs + 1);
+    fmt::format_to(buf, "exclusive = {}\n", exclusive ? "true" : "false");
+    printTabs(buf, tabs);
+    fmt::format_to(buf, "}}");
+
+    return fmt::to_string(buf);
+}
+
 string ZSuperArgs::toStringWithTabs(const core::GlobalState &gs, int tabs) const {
     return "ZSuperArgs";
 }
@@ -1095,6 +1121,18 @@ string Array::toStringWithTabs(const core::GlobalState &gs, int tabs) const {
     fmt::format_to(buf, "[");
     printElems(gs, buf, this->elems, tabs);
     fmt::format_to(buf, "]");
+    return fmt::to_string(buf);
+}
+
+string Range::toStringWithTabs(const core::GlobalState &gs, int tabs) const {
+    fmt::memory_buffer buf;
+    fmt::format_to(buf, "{}", from->toStringWithTabs(gs, tabs + 1));
+    if (exclusive) {
+        fmt::format_to(buf, "...");
+    } else {
+        fmt::format_to(buf, "..");
+    }
+    fmt::format_to(buf, "{}", to->toStringWithTabs(gs, tabs + 2));
     return fmt::to_string(buf);
 }
 
@@ -1210,6 +1248,10 @@ string Hash::nodeName() {
 
 string Array::nodeName() {
     return "Array";
+}
+
+string Range::nodeName() {
+    return "Range";
 }
 
 string Literal::nodeName() {

@@ -146,6 +146,11 @@ TreePtr deepCopy(const Expression *avoid, const Tag tag, const Expression *tree,
             return make_tree<Array>(exp->loc, deepCopyVec(avoid, exp->elems));
         }
 
+        case Tag::Range: {
+            auto *exp = reinterpret_cast<const Range *>(tree);
+            return make_tree<Range>(exp->loc, deepCopy(avoid, exp->from), deepCopy(avoid, exp->to), exp->exclusive);
+        }
+
         case Tag::Literal: {
             auto *exp = reinterpret_cast<const Literal *>(tree);
             return make_tree<Literal>(exp->loc, exp->value);
@@ -230,6 +235,7 @@ COPY_IMPL(Assign);
 COPY_IMPL(Cast);
 COPY_IMPL(Hash);
 COPY_IMPL(Array);
+COPY_IMPL(Range);
 COPY_IMPL(Literal);
 COPY_IMPL(UnresolvedConstantLit);
 COPY_IMPL(ConstantLit);

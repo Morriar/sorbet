@@ -58,6 +58,9 @@ public:
     TreePtr preTransformArray(core::MutableContext ctx, TreePtr original);
     TreePtr postransformArray(core::MutableContext ctx, TreePtr original);
 
+    TreePtr preTransformRange(core::MutableContext ctx, TreePtr original);
+    TreePtr postransformRange(core::MutableContext ctx, TreePtr original);
+
     TreePtr postTransformConstantLit(core::MutableContext ctx, TreePtr original);
 
     TreePtr postTransformUnresolvedConstantLit(core::MutableContext ctx, TreePtr original);
@@ -108,6 +111,7 @@ GENERATE_HAS_MEMBER(preTransformAssign);
 GENERATE_HAS_MEMBER(preTransformSend);
 GENERATE_HAS_MEMBER(preTransformHash);
 GENERATE_HAS_MEMBER(preTransformArray);
+GENERATE_HAS_MEMBER(preTransformRange);
 GENERATE_HAS_MEMBER(preTransformBlock);
 GENERATE_HAS_MEMBER(preTransformInsSeq);
 
@@ -135,6 +139,7 @@ GENERATE_HAS_MEMBER(postTransformSend);
 GENERATE_HAS_MEMBER(postTransformHash);
 GENERATE_HAS_MEMBER(postTransformLocal);
 GENERATE_HAS_MEMBER(postTransformArray);
+GENERATE_HAS_MEMBER(postTransformRange);
 GENERATE_HAS_MEMBER(postTransformLiteral);
 GENERATE_HAS_MEMBER(postTransformUnresolvedConstantLit);
 GENERATE_HAS_MEMBER(postTransformConstantLit);
@@ -207,6 +212,7 @@ GENERATE_POSTPONE_PRECLASS(Assign);
 GENERATE_POSTPONE_PRECLASS(Send);
 GENERATE_POSTPONE_PRECLASS(Hash);
 GENERATE_POSTPONE_PRECLASS(Array);
+GENERATE_POSTPONE_PRECLASS(Range);
 GENERATE_POSTPONE_PRECLASS(Block);
 GENERATE_POSTPONE_PRECLASS(InsSeq);
 GENERATE_POSTPONE_PRECLASS(Cast);
@@ -226,6 +232,7 @@ GENERATE_POSTPONE_POSTCLASS(Assign);
 GENERATE_POSTPONE_POSTCLASS(Send);
 GENERATE_POSTPONE_POSTCLASS(Hash);
 GENERATE_POSTPONE_POSTCLASS(Array);
+GENERATE_POSTPONE_POSTCLASS(Range);
 GENERATE_POSTPONE_POSTCLASS(Local);
 GENERATE_POSTPONE_POSTCLASS(Literal);
 GENERATE_POSTPONE_POSTCLASS(UnresolvedConstantLit);
@@ -519,6 +526,22 @@ private:
         return v;
     }
 
+    TreePtr mapRange(TreePtr v, CTX ctx) {
+        if constexpr (HAS_MEMBER_preTransformRange<FUNC>::value) {
+            v = PostPonePreTransform_Range<FUNC, CTX, HAS_MEMBER_preTransformRange<FUNC>::value>::call(
+                ctx, std::move(v), func);
+        }
+
+        cast_tree<Range>(v)->from = mapIt(std::move(cast_tree<Range>(v)->from), ctx);
+        cast_tree<Range>(v)->to = mapIt(std::move(cast_tree<Range>(v)->to), ctx);
+
+        if constexpr (HAS_MEMBER_postTransformRange<FUNC>::value) {
+            return PostPonePostTransform_Range<FUNC, CTX, HAS_MEMBER_postTransformRange<FUNC>::value>::call(
+                ctx, std::move(v), func);
+        }
+        return v;
+    }
+
     TreePtr mapLiteral(TreePtr v, CTX ctx) {
         if constexpr (HAS_MEMBER_postTransformLiteral<FUNC>::value) {
             return PostPonePostTransform_Literal<FUNC, CTX, HAS_MEMBER_postTransformLiteral<FUNC>::value>::call(
@@ -695,6 +718,9 @@ private:
 
                 case Tag::Array:
                     return mapArray(std::move(what), ctx);
+
+                case Tag::Range:
+                    return mapRange(std::move(what), ctx);
 
                 case Tag::Literal:
                     return mapLiteral(std::move(what), ctx);
@@ -1015,6 +1041,10 @@ private:
         return v;
     }
 
+    TreePtr mapRange(TreePtr v, CTX ctx) {
+        return v;
+    }
+
     TreePtr mapLiteral(TreePtr v, CTX ctx) {
         if constexpr (HAS_MEMBER_postTransformLiteral<FUNC>::value) {
             return PostPonePostTransform_Literal<FUNC, CTX, HAS_MEMBER_postTransformLiteral<FUNC>::value>::call(
@@ -1191,6 +1221,9 @@ private:
 
                 case Tag::Array:
                     return mapArray(std::move(what), ctx);
+
+                case Tag::Range:
+                    return mapRange(std::move(what), ctx);
 
                 case Tag::Literal:
                     return mapLiteral(std::move(what), ctx);

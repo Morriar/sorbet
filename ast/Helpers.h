@@ -287,6 +287,10 @@ public:
         return Hash(loc, std::move(keys), std::move(values));
     }
 
+    static TreePtr Range(core::LocOffsets loc, TreePtr from, TreePtr to, bool exclusive) {
+        return make_tree<ast::Range>(loc, std::move(from), std::move(to), exclusive);
+    }
+
     static TreePtr Sig(core::LocOffsets loc, TreePtr hash, TreePtr ret) {
         auto params = Send1(loc, Self(loc), core::Names::params(), std::move(hash));
         auto returns = Send1(loc, std::move(params), core::Names::returns(), std::move(ret));

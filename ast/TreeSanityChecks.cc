@@ -11,6 +11,11 @@ void Array::_sanityCheck() {
     }
 }
 
+void Range::_sanityCheck() {
+    ENFORCE(from);
+    ENFORCE(to);
+}
+
 void Assign::_sanityCheck() {
     ENFORCE(lhs);
     ENFORCE(rhs);

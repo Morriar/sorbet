@@ -1030,6 +1030,13 @@ void SerializerImpl::pickle(Pickler &p, const ast::TreePtr &what) {
             pickleTree(p, a->original);
         },
 
+        [&](ast::Range *a) {
+            pickleAstHeader(p, 33, a);
+            pickleTree(p, a->from);
+            pickleTree(p, a->to);
+            p.putU1(a->exclusive);
+        },
+
         [&](ast::Expression *n) { Exception::raise("Unimplemented AST Node: {}", n->nodeName()); });
 }
 
@@ -1263,6 +1270,12 @@ ast::TreePtr SerializerImpl::unpickleExpr(serialize::UnPickler &p, const GlobalS
             SymbolRef sym(gs, p.getU4());
             auto orig = unpickleExpr(p, gs, file);
             return ast::make_tree<ast::ConstantLit>(loc, sym, std::move(orig));
+        }
+        case 33: {
+            auto from = unpickleExpr(p, gs, file);
+            auto to = unpickleExpr(p, gs, file);
+            bool exclusive = p.getU1();
+            return ast::make_tree<ast::Range>(loc, std::move(from), std::move(to), exclusive);
         }
     }
     Exception::raise("Not handled {}", kind);
