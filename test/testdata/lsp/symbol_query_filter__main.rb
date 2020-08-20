@@ -36,7 +36,7 @@ module AModule::SubModule
      # ^ usage: AModule
 end
 
-class SomeClass < AnotherModule::NestedModule
+class SomeClass < AnotherModule::NestedModule # error: Superclass must be a class. Module `AnotherModule::NestedModule` given
                 # ^ usage: AnotherModule
   extend AnotherModule2::NestedModule
        # ^ usage: AnotherModule2

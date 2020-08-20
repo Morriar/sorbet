@@ -66,6 +66,7 @@ constexpr ErrorClass StaticAbstractModuleMethod{5057, StrictLevel::False};
 constexpr ErrorClass AttachedClassAsParam{5058, StrictLevel::False};
 constexpr ErrorClass LazyResolve{5059, StrictLevel::False};
 constexpr ErrorClass GenericTypeParamBoundMismatch{5060, StrictLevel::False};
+constexpr ErrorClass ParentNonClass{5061, StrictLevel::False};
 } // namespace sorbet::core::errors::Resolver
 
 #endif

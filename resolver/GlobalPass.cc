@@ -276,8 +276,15 @@ ParentLinearizationInformation computeClassLinearization(core::GlobalState &gs, 
     auto data = ofClass.data(gs);
     ENFORCE_NO_TIMER(data->isClassOrModule());
     if (!data->isClassOrModuleLinearizationComputed()) {
-        if (data->superClass().exists()) {
-            computeClassLinearization(gs, data->superClass());
+        auto superclass = data->superClass();
+        if (superclass.exists()) {
+            computeClassLinearization(gs, superclass);
+            if (superclass != core::Symbols::StubModule() && !superclass.data(gs)->isClassOrModuleClass()) {
+                if (auto e = gs.beginError(data->loc(), core::errors::Resolver::ParentNonClass)) {
+                    e.setHeader("Superclass must be a class. Module `{}` given",
+                                superclass.data(gs)->show(gs));
+                }
+            }
         }
         InlinedVector<core::SymbolRef, 4> currentMixins = data->mixins();
         InlinedVector<core::SymbolRef, 4> newMixins;
