@@ -121,7 +121,8 @@ private:
         core::SymbolRef klass;
         core::FileRef file;
 
-        bool isSuperclass; // true if superclass, false for mixin
+        enum Kind { superclass, mixin, requiredAncestor };
+        Kind kind;
 
         AncestorResolutionItem() = default;
         AncestorResolutionItem(AncestorResolutionItem &&rhs) noexcept = default;
@@ -435,7 +436,7 @@ private:
     }
 
     static core::SymbolRef stubSymbolForAncestor(const AncestorResolutionItem &item) {
-        if (item.isSuperclass) {
+        if (item.kind == AncestorResolutionItem::Kind::superclass) {
             return core::Symbols::StubSuperClass();
         } else {
             return core::Symbols::StubMixin();
@@ -488,7 +489,7 @@ private:
         }
 
         bool ancestorPresent = true;
-        if (job.isSuperclass) {
+        if (job.kind == AncestorResolutionItem::superclass) {
             if (resolved == core::Symbols::todo()) {
                 // No superclass specified
                 ancestorPresent = false;
@@ -502,6 +503,9 @@ private:
                                 job.klass.data(ctx)->superClass().show(ctx), resolved.show(ctx));
                 }
             }
+        } else if (job.kind == AncestorResolutionItem::requiredAncestor) {
+            ENFORCE(resolved.data(ctx)->isClassOrModule());
+            job.klass.data(ctx)->requireAncestor(resolved, job.ancestor->loc);
         } else {
             ENFORCE(resolved.data(ctx)->isClassOrModule());
             job.klass.data(ctx)->addMixin(resolved);
@@ -525,11 +529,12 @@ private:
         ancestorSym.data(ctx)->recordSealedSubclass(ctx, job.klass);
     }
 
+    // TODO use neum?
     void transformAncestor(core::Context ctx, core::SymbolRef klass, ast::TreePtr &ancestor,
-                           bool isSuperclass = false) {
+                            AncestorResolutionItem::Kind kind = AncestorResolutionItem::mixin) {
         if (auto *constScope = ast::cast_tree<ast::UnresolvedConstantLit>(ancestor)) {
             auto scopeTmp = nesting_;
-            if (isSuperclass) {
+            if (kind == AncestorResolutionItem::superclass) {
                 nesting_ = nesting_->parent;
             }
             ancestor = postTransformUnresolvedConstantLit(ctx, std::move(ancestor));
@@ -537,7 +542,7 @@ private:
         }
         AncestorResolutionItem job;
         job.klass = klass;
-        job.isSuperclass = isSuperclass;
+        job.kind = kind;
         job.file = ctx.file;
 
         if (auto *cnst = ast::cast_tree<ast::ConstantLit>(ancestor)) {
@@ -553,7 +558,7 @@ private:
                         ast::cast_tree_nonnull<ast::UnresolvedConstantLit>(cnst->original).scope) ||
                     ast::isa_tree<ast::EmptyTree>(
                         ast::cast_tree_nonnull<ast::UnresolvedConstantLit>(cnst->original).scope));
-            if (isSuperclass && sym == core::Symbols::todo()) {
+            if (kind == AncestorResolutionItem::superclass && sym == core::Symbols::todo()) {
                 return;
             }
             job.ancestor = cnst;
@@ -605,7 +610,12 @@ public:
         for (auto &ancst : original.ancestors) {
             bool isSuperclass = (original.kind == ast::ClassDef::Kind::Class && &ancst == &original.ancestors.front() &&
                                  !klass.data(ctx)->isSingletonClass(ctx));
-            transformAncestor(isSuperclass ? ctx : ctx.withOwner(klass), klass, ancst, isSuperclass);
+            transformAncestor(isSuperclass ? ctx : ctx.withOwner(klass), klass, ancst,
+                    isSuperclass ? AncestorResolutionItem::superclass : AncestorResolutionItem::mixin);
+        }
+
+        for (auto &ancst : original.requiredAncestors) {
+            transformAncestor(ctx.withOwner(klass), klass, ancst, AncestorResolutionItem::requiredAncestor);
         }
 
         auto singleton = klass.data(ctx)->lookupSingletonClass(ctx);

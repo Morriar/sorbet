@@ -89,6 +89,8 @@ NameDef names[] = {
     {"currentFile", "__FILE__"},
     {"merge"},
 
+    {"requiresAncestor", "requires_ancestor"},
+
     // T keywords
     {"sig"},
     {"typeParameters", "type_parameters"},

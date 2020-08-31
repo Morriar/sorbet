@@ -1010,12 +1010,16 @@ void SerializerImpl::pickle(Pickler &p, const ast::TreePtr &what) {
             p.putU4(c->symbol.rawId());
             p.putU4(c->ancestors.size());
             p.putU4(c->singletonAncestors.size());
+            p.putU4(c->requiredAncestors.size());
             p.putU4(c->rhs.size());
             pickle(p, c->name);
             for (auto &anc : c->ancestors) {
                 pickle(p, anc);
             }
             for (auto &anc : c->singletonAncestors) {
+                pickle(p, anc);
+            }
+            for (auto &anc : c->requiredAncestors) {
                 pickle(p, anc);
             }
             for (auto &anc : c->rhs) {
@@ -1220,6 +1224,7 @@ ast::TreePtr SerializerImpl::unpickleExpr(serialize::UnPickler &p, const GlobalS
             auto symbol = SymbolRef::fromRaw(p.getU4());
             auto ancestorsSize = p.getU4();
             auto singletonAncestorsSize = p.getU4();
+            auto requiredAncestorsSize = p.getU4();
             auto rhsSize = p.getU4();
             auto name = unpickleExpr(p, gs, file);
             ast::ClassDef::ANCESTORS_store ancestors(ancestorsSize);
@@ -1228,6 +1233,10 @@ ast::TreePtr SerializerImpl::unpickleExpr(serialize::UnPickler &p, const GlobalS
             }
             ast::ClassDef::ANCESTORS_store singletonAncestors(singletonAncestorsSize);
             for (auto &sanc : singletonAncestors) {
+                sanc = unpickleExpr(p, gs, file);
+            }
+            ast::ClassDef::ANCESTORS_store requiredAncestors(requiredAncestorsSize);
+            for (auto &sanc : requiredAncestors) {
                 sanc = unpickleExpr(p, gs, file);
             }
             ast::ClassDef::RHS_store rhs(rhsSize);
@@ -1239,6 +1248,7 @@ ast::TreePtr SerializerImpl::unpickleExpr(serialize::UnPickler &p, const GlobalS
             {
                 auto klass = ast::cast_tree<ast::ClassDef>(ret);
                 klass->singletonAncestors = std::move(singletonAncestors);
+                klass->requiredAncestors = std::move(requiredAncestors);
                 klass->symbol = symbol;
             }
             return ret;

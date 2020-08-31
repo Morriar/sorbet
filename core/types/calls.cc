@@ -536,7 +536,8 @@ DispatchResult dispatchCallSymbol(const GlobalState &gs, DispatchArgs args,
                 // catch the special case of `interface!`, `abstract!`, `final!`, or `sealed!` and
                 // suggest adding `extend T::Helpers`.
                 if (args.name == core::Names::declareInterface() || args.name == core::Names::declareAbstract() ||
-                    args.name == core::Names::declareFinal() || args.name == core::Names::declareSealed()) {
+                    args.name == core::Names::declareFinal() || args.name == core::Names::declareSealed() ||
+                    args.name == core::Names::requiresAncestor()) {
                     if (auto suggestion =
                             maybeSuggestExtendTHelpers(gs, thisType, core::Loc(args.locs.file, args.locs.call))) {
                         e.addAutocorrect(std::move(*suggestion));

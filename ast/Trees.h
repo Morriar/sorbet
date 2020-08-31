@@ -340,6 +340,7 @@ public:
 
     ANCESTORS_store ancestors;
     ANCESTORS_store singletonAncestors;
+    ANCESTORS_store requiredAncestors;
 
     ClassDef(core::LocOffsets loc, core::Loc declLoc, core::SymbolRef symbol, TreePtr name, ANCESTORS_store ancestors,
              RHS_store rhs, ClassDef::Kind kind);
@@ -353,7 +354,7 @@ public:
 private:
     virtual void _sanityCheck();
 };
-CheckSize(ClassDef, 136, 8);
+CheckSize(ClassDef, 160, 8);
 
 TREE(MethodDef) : public Declaration {
 public:

@@ -87,7 +87,9 @@ module T::Helpers
   def final!; end
   sig {void}
   def sealed!; end
+
   def mixes_in_class_methods(mod); end
+  def requires_ancestor(*mod); end
 end
 
 module T::Array

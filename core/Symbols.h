@@ -133,6 +133,33 @@ public:
         unsetClassOrModuleLinearizationComputed();
     }
 
+    // Ancestors required by this class or module associated to the `requires_ancestor X` location
+    inline InlinedVector<std::pair<SymbolRef, LocOffsets>, 4> &requiredAncestors() {
+        ENFORCE_NO_TIMER(isClassOrModule());
+        return requiredAncestorsLocs;
+    }
+
+    // Ancestors required by this class or module associated to the `requires_ancestor X` location
+    inline const InlinedVector<std::pair<SymbolRef, LocOffsets>, 4> &requiredAncestors() const {
+        ENFORCE_NO_TIMER(isClassOrModule());
+        return requiredAncestorsLocs;
+    }
+
+    // Add a required ancestor to this class or module
+    void requireAncestor(SymbolRef sym, LocOffsets requiredAt) {
+        ENFORCE(isClassOrModule());
+        requiredAncestorsLocs.emplace_back(std::pair(sym, requiredAt));
+    }
+
+    struct RequiredAncestor {
+        SymbolRef required;
+        SymbolRef requiredBy;
+        LocOffsets requiredAt;
+    };
+
+    // All ancestors required by self and it's ancestors
+    std::vector<RequiredAncestor> allRequiredAncestors(const core::GlobalState &gs) const;
+
     inline InlinedVector<SymbolRef, 4> &typeMembers() {
         ENFORCE(isClassOrModule());
         return typeParams;
@@ -622,6 +649,9 @@ private:
      *   Resolver::finalize(), these will be rewritten to `Object()`.
      */
     InlinedVector<SymbolRef, 4> mixins_;
+
+    // Ancestors required by this class or module associated to the `requires_ancestor X` location
+    InlinedVector<std::pair<SymbolRef, LocOffsets>, 4> requiredAncestorsLocs;
 
     /** For Class or module - ordered type members of the class,
      * for method - ordered type generic type arguments of the class

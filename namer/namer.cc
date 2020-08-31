@@ -1367,6 +1367,8 @@ class TreeSymbolizer {
             dest = &klass.ancestors;
         } else if (send->fun == core::Names::extend()) {
             dest = &klass.singletonAncestors;
+        } else if (send->fun == core::Names::requiresAncestor()) {
+            dest = &klass.requiredAncestors;
         } else {
             return;
         }

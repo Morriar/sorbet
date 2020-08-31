@@ -551,6 +551,72 @@ private:
         }
     }
 
+    UnorderedMap<core::SymbolRef, vector<pair<core::SymbolRef, core::SymbolRef>>> requirementsCache;
+
+    void validateInclusionRequirements(core::Context ctx, const core::SymbolRef klass, const ast::ClassDef *classDef) {
+        // TODO clean
+        // TODO display only conflicts
+
+        vector<pair<core::SymbolRef, core::LocOffsets>> classes;
+        for (auto req : klass.data(ctx)->requiredAncestors()) {
+            if (!req.first.data(ctx)->isClassOrModuleModule()) {
+                classes.emplace_back(req);
+            }
+        }
+
+        bool unrelatedClasses = false;
+        if (classes.size() > 1) {
+            for (int j = 1; j < classes.size(); j++) {
+                int k = j - 1;
+                if (!classes[k].first.data(ctx)->derivesFrom(ctx, classes[j].first) &&
+                    !classes[j].first.data(ctx)->derivesFrom(ctx, classes[k].first)) {
+                    unrelatedClasses = true;
+                }
+            }
+        }
+
+        if (unrelatedClasses) {
+            // TODO error class
+            if (auto e = ctx.beginError(klass.data(ctx)->loc().offsets(), core::errors::Resolver::IncludesNonModule)) {
+                e.setHeader("`{}` requires `{}` unrelated classes making it impossible to include",
+                            klass.data(ctx)->show(ctx), classes.size());
+                for (auto sklass : classes) {
+                    auto sourceLoc = core::Loc(sklass.first.data(ctx)->loc().file(), sklass.second);
+                    e.addErrorLine(sourceLoc, "`{}` required by `{}` here",
+                            sklass.first.data(ctx)->show(ctx), klass.data(ctx)->show(ctx));
+                }
+            }
+        }
+
+
+        if (klass.data(ctx)->isClassOrModuleModule()) {
+            // TODO Should check module extending?
+            return;
+        }
+        if (klass.data(ctx)->isClassOrModuleAbstract()) {
+            return;
+        }
+
+        auto reqs = klass.data(ctx)->allRequiredAncestors(ctx);
+
+        for (auto req : reqs) {
+            if (!klass.data(ctx)->derivesFrom(ctx, req.required)) {
+                // TODO change error kind
+                if (auto e =
+                        ctx.beginError(klass.data(ctx)->loc().offsets(), core::errors::Resolver::SealedAncestor)) {
+                    e.setHeader("`{}` must {} `{}` (required by `{}`)",
+                            klass.data(ctx)->show(ctx),
+                            req.required.data(ctx)->isClassOrModuleModule() ? "include" : "subclass",
+                            req.required.data(ctx)->show(ctx),
+                            req.requiredBy.data(ctx)->show(ctx));
+
+                    auto sourceLoc = core::Loc(req.requiredBy.data(ctx)->loc().file(), req.requiredAt);
+                    e.addErrorLine(sourceLoc, "required by `{}` here", req.requiredBy.data(ctx)->show(ctx));
+                }
+            }
+        }
+    }
+
 public:
     ast::TreePtr preTransformClassDef(core::Context ctx, ast::TreePtr tree) {
         auto *classDef = ast::cast_tree_const<ast::ClassDef>(tree);
@@ -561,6 +627,7 @@ public:
         validateAbstract(ctx, singleton);
         validateFinal(ctx, sym, classDef);
         validateSealed(ctx, sym, classDef);
+        validateInclusionRequirements(ctx, sym, classDef);
         return tree;
     }
 

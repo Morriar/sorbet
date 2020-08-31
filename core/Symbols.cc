@@ -353,8 +353,22 @@ SymbolRef Symbol::findMemberTransitiveInternal(const GlobalState &gs, NameRef na
         }
     }
     if (this->superClass().exists()) {
-        return this->superClass().data(gs)->findMemberTransitiveInternal(gs, name, mask, flags, maxDepth - 1);
+        result = this->superClass().data(gs)->findMemberTransitiveInternal(gs, name, mask, flags, maxDepth - 1);
+        if (result.exists()) {
+            return result;
+        }
     }
+
+    // If the symbol can't be found, it might belong to a required module
+    for (auto req : this->allRequiredAncestors(gs)) {
+        auto ancst = req.required;
+        ENFORCE(ancst.exists());
+        result = ancst.data(gs)->findMemberTransitiveInternal(gs, name, mask, flags, maxDepth - 1);
+        if (result.exists()) {
+            return result;
+        }
+    }
+
     return Symbols::noSymbol();
 }
 
@@ -1368,6 +1382,58 @@ vector<std::pair<NameRef, SymbolRef>> Symbol::membersStableOrderSlow(const Globa
     });
     return result;
 }
+
+std::vector<Symbol::RequiredAncestor> Symbol::allRequiredAncestors(const core::GlobalState &gs) const {
+    ENFORCE(isClassOrModule());
+    std::vector<Symbol::RequiredAncestor> reqs;
+
+    auto superclass = superClass();
+    if (superclass.exists()) {
+        auto fromSuper = superclass.data(gs)->allRequiredAncestors(gs);
+        reqs.insert(reqs.end(), fromSuper.begin(), fromSuper.end());
+
+        for (auto req : superclass.data(gs)->requiredAncestors()) {
+            RequiredAncestor ancst;
+            ancst.required = req.first;
+            ancst.requiredBy = superclass;
+            ancst.requiredAt = req.second;
+            reqs.emplace_back(ancst);
+        }
+    }
+
+    if (isClassOrModuleLinearizationComputed()) {
+        for (auto mixin : mixins()) {
+            for (auto req : mixin.data(gs)->requiredAncestors()) {
+                RequiredAncestor ancst;
+                ancst.required = req.first;
+                ancst.requiredBy = mixin;
+                ancst.requiredAt = req.second;
+                reqs.emplace_back(ancst);
+            }
+        }
+    } else {
+        for (auto mixin : mixins()) {
+            auto fromMixin = mixin.data(gs)->allRequiredAncestors(gs);
+            reqs.insert(reqs.end(), fromMixin.begin(), fromMixin.end());
+        }
+    }
+
+    for (auto req : requiredAncestors()) {
+        auto fromReqs = req.first.data(gs)->allRequiredAncestors(gs);
+        reqs.insert(reqs.end(), fromReqs.begin(), fromReqs.end());
+    }
+
+    for (auto req : requiredAncestors()) {
+        RequiredAncestor ancst;
+        ancst.required = req.first;
+        ancst.requiredBy = ref(gs);
+        ancst.requiredAt = req.second;
+        reqs.emplace_back(ancst);
+    }
+
+    return reqs;
+}
+
 
 SymbolData::SymbolData(Symbol &ref, const GlobalState &gs) : DebugOnlyCheck(gs), symbol(ref) {}
 
