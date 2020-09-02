@@ -16,14 +16,26 @@ module D
   requires_ancestor "A" # error: `requires_ancestor` must only contain constant literals
 end
 
-class C1; end
-class C2; end
-
-module E # error: `E` requires `2` unrelated classes making it impossible to include
+module E
   extend T::Helpers
-  requires_ancestor C1, C2
+  requires_ancestor A
+  requires_ancestor A # error: `A` is already required by `E`
 end
 
-class F < C1 # error: `F` must subclass `C2` (required by `E`)
-  include E
+module F
+  extend T::Helpers
+  requires_ancestor A # error: `A` is already included by `F`
+  include A
+end
+
+class G; end
+
+class H < G
+  extend T::Helpers
+  requires_ancestor G # error: `G` is already inherited by `H`
+end
+
+class I < H
+  extend T::Helpers
+  requires_ancestor G # error: `G` is already inherited by `I`
 end
