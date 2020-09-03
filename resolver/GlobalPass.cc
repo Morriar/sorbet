@@ -345,20 +345,113 @@ void fullLinearizationSlowImpl(core::GlobalState &gs, const ParentLinearizationI
         }
     }
 };
+
 InlinedVector<core::SymbolRef, 4> ParentLinearizationInformation::fullLinearizationSlow(core::GlobalState &gs) {
     InlinedVector<core::SymbolRef, 4> res;
     fullLinearizationSlowImpl(gs, *this, res);
     return res;
 }
 
+class RequiredAncestorsLinearization {
+public:
+    RequiredAncestorsLinearization(core::GlobalState &gs): gs(gs) {};
+
+    void linearizeRequiredAncestors(core::SymbolRef sym) {
+        // std::cout << "linearize " << sym.data(gs)->show(gs) << "\n";
+        auto data = sym.data(gs);
+        ENFORCE(data->isClassOrModule());
+        ENFORCE(data->isClassOrModuleLinearizationComputed());
+
+        seen.clear();
+        auto allAncestors = requiredAncestorsTransitive(sym, sym);
+        // data->requiredAncestors().clear();
+        for (auto ancst : allAncestors) {
+            if (hasAncestor(gs, sym, ancst.required)) {
+                continue;
+            }
+            data->requiredAncestors().emplace_back(ancst);
+        }
+    }
+
+private:
+    core::GlobalState &gs;
+    std::vector<core::SymbolRef> seen;
+    UnorderedMap<core::SymbolRef, std::vector<core::Symbol::RequiredAncestor>> ancestorsCache;
+
+    std::vector<core::Symbol::RequiredAncestor> requiredAncestorsTransitive(core::SymbolRef root, core::SymbolRef sym) {
+        auto ent = ancestorsCache.find(sym);
+        if (ent != ancestorsCache.end()) {
+            return ent->second;
+        }
+
+        auto data = sym.data(gs);
+        std::vector<core::Symbol::RequiredAncestor> reqs;
+
+        auto superclass = data->superClass();
+        if (superclass.exists()) {
+            auto fromSuper = requiredAncestorsTransitive(sym, superclass);
+            reqs.insert(reqs.end(), fromSuper.begin(), fromSuper.end());
+        }
+
+        for (auto mixin : data->mixins()) {
+            auto fromMxin = requiredAncestorsTransitive(sym, mixin);
+            // auto fromMxin = mixin.data(gs)->requiredAncestors();
+            reqs.insert(reqs.end(), fromMxin.begin(), fromMxin.end());
+        }
+
+        for (auto req : data->requiredAncestors()) {
+            if (req.required == sym) {
+                if (auto e = gs.beginError(data->loc(), core::errors::Resolver::CircularDependency)) {
+                    e.setHeader("Circular requirement: `{}` is required as an ancestor of itself", data->show(gs));
+                    auto sourceLoc = core::Loc(data->loc().file(), req.requiredAt);
+                    e.addErrorLine(sourceLoc, "Required as ancestor here");
+                    return reqs;
+                }
+            }
+            auto alreadySeen = std::find(seen.begin(), seen.end(), req.required);
+            if (alreadySeen != seen.end()) {
+                // if (auto e = gs.beginError(data->loc(), core::errors::Resolver::CircularDependency)) {
+                    // e.setHeader("Circular requirement: `{}` and `{}` are requiring each other as ancestors",
+                                // req.required.data(gs)->show(gs), root.data(gs)->show(gs));
+                    // e.addErrorLine(data->loc(), "One definition");
+                    // e.addErrorLine(root.data(gs)->loc(), "Other definition");
+                // }
+                return reqs;
+            }
+            seen.emplace_back(req.required);
+
+            auto fromRequiredAncestor = requiredAncestorsTransitive(sym, req.required);
+            reqs.insert(reqs.end(), fromRequiredAncestor.begin(), fromRequiredAncestor.end());
+            reqs.emplace_back(req);
+
+
+        }
+
+        auto &entry = ancestorsCache[sym];
+        entry = std::move(reqs);
+        return entry;
+    }
+
+    bool hasAncestor(core::GlobalState &gs, core::SymbolRef sym, core::SymbolRef ancestor) {
+        for (auto ancst : sym.data(gs)->requiredAncestors()) {
+            if (ancst.required == ancestor) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
 void Resolver::computeLinearization(core::GlobalState &gs) {
     Timer timer(gs.tracer(), "resolver.compute_linearization");
+    RequiredAncestorsLinearization requiredAncestorsLinearization(gs);
 
     // TODO: this does not support `prepend`
     for (int i = 1; i < gs.classAndModulesUsed(); ++i) {
         const auto &ref = core::SymbolRef(&gs, core::SymbolRef::Kind::ClassOrModule, i);
         ENFORCE(ref.data(gs)->isClassOrModule());
         computeClassLinearization(gs, ref);
+        requiredAncestorsLinearization.linearizeRequiredAncestors(ref);
     }
 }
 

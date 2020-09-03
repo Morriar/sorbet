@@ -472,6 +472,13 @@ private:
             resolved = stubSymbolForAncestor(job);
         }
 
+        if (job.kind == AncestorResolutionItem::requiredAncestor) {
+            ENFORCE(resolved.data(ctx)->isClassOrModule());
+            core::Symbol::RequiredAncestor ancst = { resolved, job.klass, job.ancestor->loc };
+            job.klass.data(ctx)->requiredAncestors().emplace_back(ancst);
+            return true;
+        }
+
         if (resolved == job.klass) {
             if (auto e = ctx.beginError(job.ancestor->loc, core::errors::Resolver::CircularDependency)) {
                 e.setHeader("Circular dependency: `{}` is a parent of itself", job.klass.data(ctx)->show(ctx));
@@ -503,9 +510,6 @@ private:
                                 job.klass.data(ctx)->superClass().show(ctx), resolved.show(ctx));
                 }
             }
-        } else if (job.kind == AncestorResolutionItem::requiredAncestor) {
-            ENFORCE(resolved.data(ctx)->isClassOrModule());
-            job.klass.data(ctx)->requireAncestor(resolved, job.ancestor->loc);
         } else {
             ENFORCE(resolved.data(ctx)->isClassOrModule());
             job.klass.data(ctx)->addMixin(resolved);

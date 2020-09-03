@@ -557,11 +557,11 @@ private:
         auto ancestors = klass.data(ctx)->requiredAncestors();
 
         for (auto req : ancestors) {
-            if (klass.data(ctx)->derivesFrom(ctx, req.first)) {
-                if (auto e = ctx.beginError(req.second, core::errors::Resolver::IncludesNonModule)) {
+            if (klass == req.requiredBy && klass.data(ctx)->derivesFrom(ctx, req.required)) {
+                if (auto e = ctx.beginError(req.requiredAt, core::errors::Resolver::IncludesNonModule)) {
                     e.setHeader("`{}` is already {} by `{}`",
-                                req.first.data(ctx)->show(ctx),
-                                req.first.data(ctx)->isClassOrModuleModule() ? "included" : "inherited",
+                                req.required.data(ctx)->show(ctx),
+                                req.required.data(ctx)->isClassOrModuleModule() ? "included" : "inherited",
                                 klass.data(ctx)->show(ctx));
                 }
             }
@@ -572,24 +572,22 @@ private:
                 auto c1 = ancestors[i];
                 for (int j = i + 1; j < ancestors.size(); j++) {
                     auto c2 = ancestors[j];
-                    if(c1.first == c2.first) {
-                        if (auto e = ctx.beginError(c2.second, core::errors::Resolver::IncludesNonModule)) {
+                    if(c1.required == c2.required) {
+                        if (auto e = ctx.beginError(c2.requiredAt, core::errors::Resolver::IncludesNonModule)) {
                             e.setHeader("`{}` is already required by `{}`",
-                                        c2.first.data(ctx)->show(ctx),
+                                        c2.required.data(ctx)->show(ctx),
                                         klass.data(ctx)->show(ctx));
-                            auto sourceLoc = core::Loc(klass.data(ctx)->loc().file(), c1.second);
+                            auto sourceLoc = core::Loc(klass.data(ctx)->loc().file(), c1.requiredAt);
                             e.addErrorLine(sourceLoc, "`{}` is already required here",
-                                    c1.first.data(ctx)->show(ctx));
+                                    c1.required.data(ctx)->show(ctx));
                         }
                     }
                 }
             }
         }
 
-        auto reqs = klass.data(ctx)->allRequiredAncestors(ctx);
-
         vector<core::Symbol::RequiredAncestor> requiredClasses;
-        for (auto req : klass.data(ctx)->allRequiredAncestors(ctx)) {
+        for (auto req : klass.data(ctx)->requiredAncestors()) {
             if (req.required.data(ctx)->isClassOrModuleClass()) {
                 requiredClasses.emplace_back(req);
             }
@@ -632,8 +630,8 @@ private:
             return;
         }
 
-        for (auto req : reqs) {
-            if (!klass.data(ctx)->derivesFrom(ctx, req.required)) {
+        for (auto req : klass.data(ctx)->requiredAncestors()) {
+            if (klass != req.required && !klass.data(ctx)->derivesFrom(ctx, req.required)) {
                 // TODO change error kind
                 if (auto e =
                         ctx.beginError(klass.data(ctx)->loc().offsets(), core::errors::Resolver::SealedAncestor)) {
