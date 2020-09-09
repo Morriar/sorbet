@@ -2251,9 +2251,8 @@ class ResolveMixesInClassMethodsWalk {
             return;
         }
 
-        auto mixedInClassMethods = ctx.owner.data(ctx)->mixedInClassMethods();
+        auto &mixedInClassMethods = ctx.owner.data(ctx)->mixedInClassMethods();
         mixedInClassMethods.emplace_back(id->symbol);
-        // mixedInClassMethods.emplace_back(id->symbol);
     }
 
 public:
