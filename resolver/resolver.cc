@@ -2250,7 +2250,10 @@ class ResolveMixesInClassMethodsWalk {
             }
             return;
         }
-        ctx.owner.data(ctx)->members()[core::Names::classMethods()] = id->symbol;
+
+        auto mixedInClassMethods = ctx.owner.data(ctx)->mixedInClassMethods();
+        mixedInClassMethods.emplace_back(id->symbol);
+        // mixedInClassMethods.emplace_back(id->symbol);
     }
 
 public:
