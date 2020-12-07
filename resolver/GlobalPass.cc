@@ -44,6 +44,7 @@ bool resolveTypeMember(core::GlobalState &gs, core::SymbolRef parent, core::Symb
                        core::SymbolRef sym, vector<vector<pair<core::SymbolRef, core::SymbolRef>>> &typeAliases) {
     core::NameRef name = parentTypeMember.data(gs)->name;
     core::SymbolRef my = sym.data(gs)->findMember(gs, name);
+    std::cout << "ResolveTypeMember\n";
     if (!my.exists()) {
         // The type member for `my` is not manually defined in the module/class pointed by `sym`
         if (parentTypeMember.data(gs)->isFixed()) {

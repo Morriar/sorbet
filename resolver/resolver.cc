@@ -1562,6 +1562,7 @@ private:
 
     void fillInInfoFromSig(core::MutableContext ctx, core::SymbolRef method, core::LocOffsets exprLoc, ParsedSig sig,
                            bool isOverloaded, const ast::MethodDef &mdef) {
+        std::cout << "ResolveSig\n";
         ENFORCE(isOverloaded || mdef.symbol == method);
         ENFORCE(isOverloaded || method.data(ctx)->arguments().size() == mdef.args.size());
 
