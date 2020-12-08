@@ -639,6 +639,19 @@ private:
                 }
                 return;
             }
+
+            // We store the required ancestors into a fake property called `<required-ancestors>`
+            auto ancestors = id->symbol.data(gs)->findMember(gs, core::Names::requiredAncestors());
+            if (!ancestors.exists()) {
+                ancestors = gs.enterMethodSymbol(loc, owner, core::Names::requiredAncestors());
+            }
+
+            if (ancestors.data(gs)->resultType == nullptr) {
+                vector<core::TypePtr> targs;
+                ancestors.data(gs)->resultType = core::TupleType::build(gs, move(targs));
+            }
+            auto type = core::make_type<core::ClassType>(id->symbol);
+            (core::cast_type<core::TupleType>(ancestors.data(gs)->resultType))->elems.emplace_back(type);
         }
     }
 
