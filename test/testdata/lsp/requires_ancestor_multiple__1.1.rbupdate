@@ -1,0 +1,12 @@
+# typed: true
+# enable-experimental-requires-ancestor: true
+# assert-slow-path: true
+
+module Bar
+  extend T::Helpers
+  requires_ancestor Foo
+  
+  def bar
+    foo
+  end
+end
