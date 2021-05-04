@@ -168,6 +168,7 @@ In general, the IR the parser generates models Ruby very granularly. This fine
 granularity is frequently extra fine for the purpose of typechecking. We use the
 Desugar and Rewriter passes to simplify the IR before typechecking.
 
+[→ docs/parser.md](parser.md)
 
 ### Desugar
 
