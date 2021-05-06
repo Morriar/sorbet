@@ -1,6 +1,7 @@
-s(:send, nil, :fun,
+s(:send,
+  s(:self), :[]=,
   s(:lvar, :foo),
   s(:kwargs,
     s(:pair,
-      s(:sym, :foo),
+      s(:sym, :a),
       s(:int, "1"))))

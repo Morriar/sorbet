@@ -1,7 +1,7 @@
 s(:send,
   s(:lvar, :foo), :[],
   s(:lvar, :bar),
-  s(:hash,
+  s(:kwargs,
     s(:pair,
       s(:sym, :baz),
       s(:int, "1"))))

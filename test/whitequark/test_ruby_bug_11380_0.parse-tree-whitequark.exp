@@ -4,7 +4,7 @@ s(:block,
       s(:send,
         s(:const, nil, :Kernel), :lambda), nil,
       s(:sym, :hello)),
-    s(:hash,
+    s(:kwargs,
       s(:pair,
         s(:sym, :a),
         s(:int, "1")))), nil, nil)
