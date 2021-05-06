@@ -563,6 +563,7 @@ private:
     }
 
     static void resolveClassMethodsJob(core::GlobalState &gs, const ClassMethodsResolutionItem &todo) {
+        std::cout << "------------ resolve Class Methods -------------" << "\n";
         auto owner = todo.owner;
         auto send = todo.send;
         if (!owner.isClassOrModule() || !owner.data(gs)->isClassOrModuleModule()) {
@@ -648,6 +649,7 @@ private:
     }
 
     static void resolveRequiredAncestorsJob(core::GlobalState &gs, const RequireAncestorResolutionItem &todo) {
+        std::cout << "------------ resolve RA -------------" << "\n";
         auto owner = todo.owner;
         auto send = todo.send;
         auto loc = core::Loc(todo.file, send->loc);
@@ -850,10 +852,10 @@ public:
                 auto item = ClassMethodsResolutionItem{ctx.file, ctx.owner, &send};
                 this->todoClassMethods_.emplace_back(move(item));
             } else if (send.fun == core::Names::requiresAncestor()) {
-                if (ctx.state.requiresAncestorEnabled) {
+                // if (ctx.state.requiresAncestorEnabled) {
                     auto item = RequireAncestorResolutionItem{ctx.file, ctx.owner, &send};
                     this->todoRequiredAncestors_.emplace_back(move(item));
-                }
+                // }
             }
         } else {
             auto recvAsConstantLit = ast::cast_tree<ast::ConstantLit>(send.recv);

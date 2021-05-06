@@ -4,8 +4,11 @@
 module Bar
   extend T::Helpers
   requires_ancestor Foo
+  mixes_in_class_methods Foo
 
   def bar
-	foo
+	  foo
   end
+
+  def baz; end
 end

@@ -1572,6 +1572,7 @@ vector<Symbol::RequiredAncestor> Symbol::readRequiredAncestorsInternal(const Glo
 
 // Record a required ancestor for this class of module
 void Symbol::recordRequiredAncestor(GlobalState &gs, ClassOrModuleRef ancestor, Loc loc) {
+    std::cout << "------------ record RA -------------" << "\n";
     RequiredAncestor req = {this->ref(gs).asClassOrModuleRef(), ancestor, loc};
     recordRequiredAncestorInternal(gs, req, Names::requiredAncestors());
 }
@@ -1811,13 +1812,21 @@ u4 Symbol::hash(const GlobalState &gs) const {
     result = mix(result, this->owner._id);
     result = mix(result, this->superClassOrRebind.id());
     // argumentsOrMixins, typeParams, typeAliases
+    // if (isClassOrModule() && this->ref(gs).exists()) {
+        // std::cout << "sym: " << this->ref(gs).data(gs)->name.show(gs) << "\n";
+        // std::cout << requiredAncestors(gs).size() << "\n";
+    // }
     if (!members().empty()) {
         // Rather than use membersStableOrderSlow, which is... slow..., use an order dictated by symbol ref ID.
         // It's faster to sort, and SymbolRef IDs are stable during hashing.
         vector<core::SymbolRef> membersToHash;
         membersToHash.reserve(this->members().size());
         for (auto e : this->members()) {
+            // if (e.second.exists()) {
+                // std::cout << "  member: " << e.second.data(gs)->name.show(gs) << "\n";
+            // }
             if (e.second.exists() && !e.second.data(gs)->ignoreInHashing(gs)) {
+                // std::cout << "member: " << e.second.data(gs)->name.show(gs) << "\n";
                 membersToHash.emplace_back(e.second);
             }
         }
@@ -1826,7 +1835,17 @@ u4 Symbol::hash(const GlobalState &gs) const {
             result = mix(result, _hash(member.data(gs)->name.shortName(gs)));
         }
     }
+    if (isClassOrModule()) {
+        for (const auto &ra : requiredAncestors(gs)) {
+            // std::cout << "LOL\n";
+            // if((int)&ra != 0) {}
+            if (ra.symbol.exists()) {
+                std::cout << " ra: " << ra.symbol.show(gs) << "\n";
+            }
+        }
+    }
     for (const auto &e : mixins_) {
+        std::cout << " mixm: " << e.show(gs) << "\n";
         if (e.exists() && !e.data(gs)->ignoreInHashing(gs)) {
             result = mix(result, _hash(e.data(gs)->name.shortName(gs)));
         }

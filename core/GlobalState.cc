@@ -1866,6 +1866,7 @@ u4 patchHash(u4 hash) {
 }
 
 unique_ptr<GlobalStateHash> GlobalState::hash() const {
+    std::cout << "------------ hash -------------" << "\n";
     constexpr bool DEBUG_HASHING_TAIL = false;
     u4 hierarchyHash = 0;
     UnorderedMap<NameHash, u4> methodHashes;
