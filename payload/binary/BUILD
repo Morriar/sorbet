@@ -74,6 +74,6 @@ genrule(
     outs = [
         "state-payload-raw",
     ],
-    cmd = "$(location //main:sorbet-orig) --silence-dev-message  --store-state $(location state-payload-raw) --no-error-count",
+    cmd = "$(location //main:sorbet-orig) --silence-dev-message  --store-state $(location state-payload-raw) --no-error-count || true",
     tools = ["//main:sorbet-orig"],
 )
