@@ -1,1 +1,2 @@
-s(:str, "bazqux\n")
+s(:str, "bazqux
+")
