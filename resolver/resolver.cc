@@ -2110,6 +2110,35 @@ class ResolveTypeMembersAndFieldsWalk {
         core::TypePtr result;
         typecase(
             expr, [&](const ast::Literal &a) { result = core::Types::dropLiteral(ctx, a.value); },
+            [&](const ast::Array &array) {
+                // The type of an array of literals can be resolved if all elements are the same literal type
+
+                if (array.elems.empty()) {
+                    // The array is empty, we can't infer anything
+                    return;
+                }
+
+                // Iterate other each element to find if it's always a literal
+                auto previous = core::Types::untypedUntracked();
+                for (auto &elem : array.elems) {
+                    if (auto lit = ast::cast_tree<ast::Literal>(elem)) {
+                        auto droped = core::Types::dropLiteral(ctx, lit->value);
+                        if (previous == core::Types::untypedUntracked()) {
+                            // First element, let's save it
+                            previous = droped;
+                        } else if (previous != droped) {
+                            // We have different literal types in the array, let's not do anything
+                            return;
+                        }
+                    } else {
+                        // We found a non-literal element, we can't infer anything
+                        return;
+                    }
+                }
+
+                // Set the type of the array to the type of the elements
+                result = core::Types::arrayOf(ctx, previous);
+            },
             [&](const ast::Cast &cast) {
                 if (cast.type == core::Types::todo()) {
                     return;
@@ -3988,8 +4017,8 @@ vector<ast::ParsedFile> resolveSigs(StateType &gs, vector<ast::ParsedFile> trees
         }
     }
 
-    // We need to define sigs in a stable order since, when there are conflicting sigs in multiple RBI files, the last
-    // sig 'wins'.
+    // We need to define sigs in a stable order since, when there are conflicting sigs in multiple RBI files, the
+    // last sig 'wins'.
     fast_sort(
         combinedFileJobs,
         [&](const ResolveSignaturesWalk::ResolveFileSignatures &left,
